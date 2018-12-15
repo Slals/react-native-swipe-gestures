@@ -13,7 +13,9 @@ export const swipeDirections = {
 const swipeConfig = {
   velocityThreshold: 0.3,
   directionalOffsetThreshold: 80,
-  gestureIsClickThreshold: 5
+  gestureIsClickThreshold: 5,
+  disableHorizontal: false,
+  disableVertical: false
 };
 
 function isValidSwipe(velocity, velocityThreshold, directionalOffset, directionalOffsetThreshold) {
@@ -43,9 +45,21 @@ class GestureRecognizer extends Component {
   }
 
   _handleShouldSetPanResponder(evt, gestureState) {
-    return evt.nativeEvent.touches.length === 1 && !this._gestureIsClick(gestureState);
+    return evt.nativeEvent.touches.length === 1 && !this._gestureIsClick(gestureState) && this._validateSwipe(gestureState);
   }
-  
+
+  _validateSwipe(gestureState) {
+		const {onSwipe, onSwipeUp, onSwipeDown, onSwipeLeft, onSwipeRight } = this.props;
+		const swipeDirection = this._getSwipeDirection(gestureState);
+
+		return (
+			((onSwipe || onSwipeUp) && swipeDirection === swipeDirections.SWIPE_UP) ||
+			((onSwipe || onSwipeDown) && swipeDirection === swipeDirections.SWIPE_DOWN) ||
+			((onSwipe || onSwipeLeft) && swipeDirection === swipeDirections.SWIPE_LEFT) ||
+			((onSwipe || onSwipeRight) && swipeDirection === swipeDirections.SWIPE_RIGHT)
+		);
+	}
+
   _gestureIsClick(gestureState) {
     return Math.abs(gestureState.dx) < swipeConfig.gestureIsClickThreshold
       && Math.abs(gestureState.dy) < swipeConfig.gestureIsClickThreshold;
@@ -79,6 +93,7 @@ class GestureRecognizer extends Component {
   _getSwipeDirection(gestureState) {
     const {SWIPE_LEFT, SWIPE_RIGHT, SWIPE_UP, SWIPE_DOWN} = swipeDirections;
     const {dx, dy} = gestureState;
+
     if (this._isValidHorizontalSwipe(gestureState)) {
       return (dx > 0)
         ? SWIPE_RIGHT
